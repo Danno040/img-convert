@@ -9,13 +9,15 @@ use std::{
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    // If set, will overwrite destination (if it exists)
+    /// If set, will overwrite destination (if it exists)
     #[arg(short)]
     force: bool,
-    // If set, will resize the image to given dimentions. Format is wxh, e.g. 1080x720
+    /// If set, will resize the image to given dimentions. Format is wxh, e.g. 1080x720
     #[arg(short)]
     resize: Option<String>,
+    /// Path to the image you wish to convert
     source: String,
+    /// The destination, image conversion done based on file extension (.png will convert to png)
     destination: String,
 }
 
