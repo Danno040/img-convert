@@ -9,6 +9,9 @@ use std::{
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    // If set, will overwrite destination (if it exists)
+    #[arg(short)]
+    force: bool,
     // If set, will resize the image to given dimentions. Format is wxh, e.g. 1080x720
     #[arg(short)]
     resize: Option<String>,
@@ -55,7 +58,7 @@ fn main() -> CliResult {
     // println!("Got: {:?}", args);
 
     // Check that destination doesn't already exist
-    if fs::metadata(&args.destination).is_ok() {
+    if fs::metadata(&args.destination).is_ok() && !args.force {
         return CliResult::error(format!(
             "{} already exists. Exiting.",
             args.destination.as_str()
