@@ -1,4 +1,5 @@
 use clap::Parser;
+use image::imageops;
 use std::{
     fs,
     io::Cursor,
@@ -8,6 +9,9 @@ use std::{
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    // If set, will resize the image to given dimentions. Format is wxh, e.g. 1080x720
+    #[arg(short)]
+    resize: Option<String>,
     source: String,
     destination: String,
 }
@@ -48,7 +52,7 @@ impl Termination for CliResult {
 
 fn main() -> CliResult {
     let args = Args::parse();
-    println!("Got: {:?}", args);
+    // println!("Got: {:?}", args);
 
     // Check that destination doesn't already exist
     if fs::metadata(&args.destination).is_ok() {
@@ -72,6 +76,42 @@ fn main() -> CliResult {
         .unwrap()
         .decode()
         .unwrap();
+
+    if args.resize.is_some() {
+        let resize = args.resize.unwrap();
+        let parts = Vec::from_iter(resize.split("x"));
+
+        let height: u32;
+        let width: u32;
+
+        if parts.len() != 2 {
+            return CliResult::error(format!("Got an invalid resize string: {}", resize))
+        }
+
+        if parts[0].is_empty() {
+            // Do proportional scaling of width
+            height = parts[1].parse().unwrap();
+            width = (height * img.width()) / img.height();
+        } else if parts[1].is_empty() {
+            // Do proportional scaling of height
+            width = parts[0].parse().unwrap();
+            height = (width * img.height()) / img.width();
+        } else {
+            // Do normal scaling
+            width = parts[0].parse().unwrap();
+            height = parts[1].parse().unwrap();
+        }
+
+        let result = imageops::resize(&img, width, height, image::imageops::FilterType::CatmullRom).save(args.destination);
+        if result.is_err() {
+            return CliResult::error(format!(
+                "Error writing result: {}",
+                result.unwrap_err().to_string()
+            ));
+        }
+
+        return CliResult::success();
+    }
 
     let result = img.save(args.destination);
     if result.is_err() {
